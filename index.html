@@ -101,11 +101,15 @@ details.art{background:#fff;border:1px solid var(--line);border-radius:14px;marg
 .hd .tag{font-size:12.5px}
 .hd h1{font-size:25px}
 .nbar{min-height:42px}
-.cdb{display:flex;align-items:center;gap:8px;min-height:30px;padding:3px 12px;background:linear-gradient(90deg,#fff6d6,#ffeaa7);color:#4a3600;border-bottom:1px solid #e6c76a;cursor:pointer;font-size:14px;overflow:hidden}
-.cdb .cdi{flex:none;font-size:15px}.cdb .cdt{flex:1;min-width:0;display:flex;align-items:center;gap:8px;animation:cdf .5s}
-.cdb .cdx{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:600}
-.cdb .cdn{flex:none;background:#0b6b4f;color:#fff;border-radius:10px;padding:1px 9px;font-size:13px;font-weight:700}.cdb .cdn.today{background:#c62828}
-.cdb small{flex:none;color:#7a6320;font-size:11px}
+.cdb{margin:10px 12px 2px;padding:10px 12px 12px;border-radius:18px;background:linear-gradient(160deg,#0d5a42,#073d2c);border:2.5px solid #d4a82a;box-shadow:0 4px 12px rgba(0,0,0,.22);color:#fff;cursor:pointer}
+.cdb .cdh{display:flex;align-items:center;justify-content:space-between;gap:8px;text-align:center}
+.cdb .cdx{flex:1;min-width:0;color:#f3d26b;font-weight:700;font-size:17px;line-height:1.3;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+.cdb small{flex:none;color:#cfe6da;font-size:12px}
+.cdb .cdg{display:grid;grid-template-columns:repeat(4,1fr);gap:7px;margin-top:8px}
+.cdb .cdg div{background:#fff;color:#0b3d2e;border-radius:10px;padding:5px 2px 4px;text-align:center}
+.cdb .cdg b{display:block;font-size:21px;line-height:1.15}.cdb .cdg span{font-size:11.5px;color:#4d5d56}
+.cdb .cdg .cds b{color:#c62828}
+.cdb .cdg .cdbig{grid-column:1/-1;background:#c62828;color:#fff;font-size:20px;font-weight:700;padding:8px}
 @keyframes cdf{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
 
 .tick span{font-size:15px}
@@ -271,14 +275,17 @@ function payAccts(f){
 function acctCard(m){return'<div class="card" style="border-left:7px solid '+m.c+';display:flex;align-items:center;gap:10px"><div style="flex:1;min-width:0"><b style="color:'+m.c+';font-size:17px">'+esc(m.t)+'</b><div style="font-size:22px;font-weight:700;letter-spacing:.5px;word-break:break-all">'+bn(esc(m.n))+'</div>'+(m.s?'<small style="display:block;color:#4d5d56;margin-top:2px">'+esc(m.s)+'</small>':'')+'</div><button class="btn sm" style="background:'+m.c+'" data-a="copy" data-v="'+esc(m.n)+'">কপি</button></div>'}
 function cdList(){
   var t=todayISO(),a=t.split('-'),t0=Date.UTC(+a[0],+a[1]-1,+a[2]);
-  return DB.events.filter(function(e){return e.date&&e.date>=t}).sort(function(x,y){return String(x.date).localeCompare(String(y.date))}).slice(0,5).map(function(e){var b=e.date.split('-'),d=Math.round((Date.UTC(+b[0],+b[1]-1,+b[2])-t0)/864e5);return{t:e.title,d:d,tm:e.time}});
+  return DB.events.filter(function(e){return e.date&&e.date>=t}).sort(function(x,y){return String(x.date).localeCompare(String(y.date))}).slice(0,5).map(function(e){var b=e.date.split('-'),d=Math.round((Date.UTC(+b[0],+b[1]-1,+b[2])-t0)/864e5);return{t:e.title,d:d,tm:e.time,ms:new Date(+b[0],+b[1]-1,+b[2]).getTime()}});
 }
 function cdText(l){
-  l=l||cdList();if(!l.length)return'';var x=l[CDI%l.length];
-  var w=x.d===0?'<b class="cdn today">আজ'+(x.tm?' • '+esc(x.tm):'')+'</b>':x.d===1?'<b class="cdn">আগামীকাল</b>':'<b class="cdn">আর '+bn(x.d)+' দিন</b>';
-  return'<span class="cdx">'+esc(x.t)+'</span>'+w+(l.length>1?'<small>'+bn(CDI%l.length+1)+'/'+bn(l.length)+'</small>':'');
+  l=l||cdList();if(!l.length)return'';var x=l[CDI%l.length],n=l.length>1?'<small>'+bn(CDI%l.length+1)+'/'+bn(l.length)+'</small>':'';
+  var h='<div class="cdh"><span class="cdx">🗓 '+esc(x.t)+'</span>'+n+'</div>';
+  if(x.d===0)return h+'<div class="cdg"><div class="cdbig">আজ'+(x.tm?' • '+esc(x.tm):'')+'</div></div>';
+  var r=Math.max(0,x.ms-Date.now()),dd=Math.floor(r/864e5),hh=Math.floor(r%864e5/36e5),mm=Math.floor(r%36e5/6e4),ss=Math.floor(r%6e4/1e3);
+  var bx=function(v,l2,c){return'<div'+(c?' class="'+c+'"':'')+'><b>'+bn(v)+'</b><span>'+l2+'</span></div>'};
+  return h+'<div class="cdg">'+bx(dd,'দিন')+bx(hh,'ঘণ্টা')+bx(mm,'মিনিট')+bx(ss,'সেকেন্ড','cds')+'</div>';
 }
-function cdBar(){var l=cdList();if(!l.length)return'<div class="cdb" data-go="events"><span class="cdi">🗓</span><span class="cdt"><span class="cdx" style="font-weight:500">'+(LOADED.events?(ADMIN?'আসন্ন কোনো কর্মসূচি নেই — চাপ দিয়ে যোগ করুন':'এখন কোনো আসন্ন কর্মসূচি নেই'):'কর্মসূচি লোড হচ্ছে…')+'</span></span></div>';return l.length?'<div class="cdb" data-go="events"><span class="cdi">🗓</span><span class="cdt" id="cdt">'+cdText(l)+'</span></div>':''}
+function cdBar(){var l=cdList();if(!l.length)return'<div class="cdb" data-go="events"><div class="cdh"><span class="cdx">🗓 '+(LOADED.events?(ADMIN?'আসন্ন কোনো কর্মসূচি নেই — চাপ দিয়ে যোগ করুন':'এখন কোনো আসন্ন কর্মসূচি নেই'):'কর্মসূচি লোড হচ্ছে…')+'</span></div></div>';return'<div class="cdb" data-go="events"><div id="cdt">'+cdText(l)+'</div></div>'}
 function vHome(){
   var t=tickerText(),dur=Math.max(14,Math.round(t.length*0.28));
   return'<div class="hd"><div class="top"><button class="lockb'+(ADMIN?' on':'')+'" data-a="lock" aria-label="প্রশাসক">'+ic(ADMIN?'unlock':'lock')+'</button><div class="dt" id="dt">'+dateLine()+'</div></div>'+
@@ -429,7 +436,7 @@ function render(){
   $('meta[name=theme-color]').setAttribute('content',cur==='home'?'#0b6b4f':PG[cur].c[0]);
 }
 setInterval(function(){var e=$('#dt');if(e)e.innerHTML=dateLine()},30000);
-setInterval(function(){var e=$('#cdt');if(e){CDI++;e.innerHTML=cdText()}},4000);
+var CDK=0;setInterval(function(){var e=$('#cdt');if(e){CDK++;if(CDK%6===0)CDI++;e.innerHTML=cdText()}},1000);
 
 
 /* ---------- PDF viewer ---------- */
