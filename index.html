@@ -278,7 +278,7 @@ function cdText(l){
   var w=x.d===0?'<b class="cdn today">আজ'+(x.tm?' • '+esc(x.tm):'')+'</b>':x.d===1?'<b class="cdn">আগামীকাল</b>':'<b class="cdn">আর '+bn(x.d)+' দিন</b>';
   return'<span class="cdx">'+esc(x.t)+'</span>'+w+(l.length>1?'<small>'+bn(CDI%l.length+1)+'/'+bn(l.length)+'</small>':'');
 }
-function cdBar(){var l=cdList();return l.length?'<div class="cdb" data-go="events"><span class="cdi">🗓</span><span class="cdt" id="cdt">'+cdText(l)+'</span></div>':''}
+function cdBar(){var l=cdList();if(!l.length)return'<div class="cdb" data-go="events"><span class="cdi">🗓</span><span class="cdt"><span class="cdx" style="font-weight:500">'+(LOADED.events?(ADMIN?'আসন্ন কোনো কর্মসূচি নেই — চাপ দিয়ে যোগ করুন':'এখন কোনো আসন্ন কর্মসূচি নেই'):'কর্মসূচি লোড হচ্ছে…')+'</span></span></div>';return l.length?'<div class="cdb" data-go="events"><span class="cdi">🗓</span><span class="cdt" id="cdt">'+cdText(l)+'</span></div>':''}
 function vHome(){
   var t=tickerText(),dur=Math.max(14,Math.round(t.length*0.28));
   return'<div class="hd"><div class="top"><button class="lockb'+(ADMIN?' on':'')+'" data-a="lock" aria-label="প্রশাসক">'+ic(ADMIN?'unlock':'lock')+'</button><div class="dt" id="dt">'+dateLine()+'</div></div>'+
