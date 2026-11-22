@@ -101,6 +101,13 @@ details.art{background:#fff;border:1px solid var(--line);border-radius:14px;marg
 .hd .tag{font-size:12.5px}
 .hd h1{font-size:25px}
 .nbar{min-height:42px}
+.cdb{display:flex;align-items:center;gap:8px;min-height:30px;padding:3px 12px;background:linear-gradient(90deg,#fff6d6,#ffeaa7);color:#4a3600;border-bottom:1px solid #e6c76a;cursor:pointer;font-size:14px;overflow:hidden}
+.cdb .cdi{flex:none;font-size:15px}.cdb .cdt{flex:1;min-width:0;display:flex;align-items:center;gap:8px;animation:cdf .5s}
+.cdb .cdx{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:600}
+.cdb .cdn{flex:none;background:#0b6b4f;color:#fff;border-radius:10px;padding:1px 9px;font-size:13px;font-weight:700}.cdb .cdn.today{background:#c62828}
+.cdb small{flex:none;color:#7a6320;font-size:11px}
+@keyframes cdf{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+
 .tick span{font-size:15px}
 .nbtn{font-size:14.5px;padding:0 10px;gap:5px}
 .nbtn .i{width:17px;height:17px}
@@ -209,7 +216,7 @@ var AVC=['#1d4ea1','#00838f','#0b6b4f','#6a1b9a','#e65100','#c62828','#3949ab','
 var DB={people:[],ledger:[],blood:[],events:[],laws:[],notices:[],archive:[],wmembers:[],meetings:[],bloodreq:[],members:[],log:[],payreq:[],info:{}};
 var LOADED={},ADMIN=false,fsdb=null,base=null,auth=null,online=false;
 var UIS={wv:'tx',q:'',bg:'',fl:'all',fm:'',ac:'',mm:''};
-var INFO0={tagline:'মোহাম্মদপুরের বৃহত্তম ঐতিহ্যবাহী সামাজিক সংগঠন',est:'২০১৫',address:'ইছাখালী, রাঙ্গুনিয়া, চট্টগ্রাম',phone:'',email:'',bkash:'',nagad:'',rocket:'',paynote:'',mission:'',history:''};
+var INFO0={tagline:'মোহাম্মদপুরের বৃহত্তম ঐতিহ্যবাহী সামাজিক সংগঠন',est:'২০১৫',address:'ইছাখালী, রাঙ্গুনিয়া, চট্টগ্রাম',phone:'',email:'',bkash:'',nagad:'',rocket:'',bankName:'',bankAcc:'',bankHolder:'',bankBranch:'',wbkash:'',wnagad:'',wbankName:'',wbankAcc:'',wbankHolder:'',wbankBranch:'',wnote:'',paynote:'',mission:'',history:''};
 try{var cc=JSON.parse(localStorage.getItem('org-cache')||'null');if(cc){COLS.forEach(function(c){DB[c]=cc[c]||[]});DB.info=cc.info||{};COLS.forEach(function(c){LOADED[c]=true});LOADED.info=true}}catch(e){}
 function cacheSave(){clearTimeout(cacheSave._t);cacheSave._t=setTimeout(function(){try{var c={info:DB.info};COLS.forEach(function(k){c[k]=DB[k]});localStorage.setItem('org-cache',JSON.stringify(c))}catch(e){}},400)}
 var info=function(){return Object.assign({},INFO0,DB.info||{})};
@@ -252,11 +259,31 @@ function tickerText(){
   var n=DB.notices.slice().sort(function(a,b){return(b.pin?1:0)-(a.pin?1:0)||String(b.date).localeCompare(String(a.date))||b.ts-a.ts}).slice(0,6);
   return n.length?n.map(function(x){return esc(x.title)}).join('  ◆  '):'এখানে সর্বশেষ ঘোষণা প্রদর্শিত হবে';
 }
+
+/* v6: payment accounts per fund + countdown strip */
+var CDI=0;
+function payAccts(f){
+  var i=info(),w=f==='welfare',P=w?'w':'',a=[];
+  [['bkash','bKash','#e2136e'],['nagad','Nagad','#f6921e'],['rocket','Rocket','#8c3494']].forEach(function(m){var v=(w?i['w'+m[0]]:'')||i[m[0]];if(v)a.push({l:m[1],t:m[1]+' (Personal)',c:m[2],n:v,s:''})});
+  if(i[P+'bankAcc'])a.push({l:'ব্যাংক',t:'🏦 '+(i[P+'bankName']||'ব্যাংক হিসাব'),c:'#1565c0',n:i[P+'bankAcc'],s:[i[P+'bankHolder']?'হিসাবের নাম: '+i[P+'bankHolder']:'',i[P+'bankBranch']?'শাখা: '+i[P+'bankBranch']:''].filter(Boolean).join(' • ')});
+  return a;
+}
+function acctCard(m){return'<div class="card" style="border-left:7px solid '+m.c+';display:flex;align-items:center;gap:10px"><div style="flex:1;min-width:0"><b style="color:'+m.c+';font-size:17px">'+esc(m.t)+'</b><div style="font-size:22px;font-weight:700;letter-spacing:.5px;word-break:break-all">'+bn(esc(m.n))+'</div>'+(m.s?'<small style="display:block;color:#4d5d56;margin-top:2px">'+esc(m.s)+'</small>':'')+'</div><button class="btn sm" style="background:'+m.c+'" data-a="copy" data-v="'+esc(m.n)+'">কপি</button></div>'}
+function cdList(){
+  var t=todayISO(),a=t.split('-'),t0=Date.UTC(+a[0],+a[1]-1,+a[2]);
+  return DB.events.filter(function(e){return e.date&&e.date>=t}).sort(function(x,y){return String(x.date).localeCompare(String(y.date))}).slice(0,5).map(function(e){var b=e.date.split('-'),d=Math.round((Date.UTC(+b[0],+b[1]-1,+b[2])-t0)/864e5);return{t:e.title,d:d,tm:e.time}});
+}
+function cdText(l){
+  l=l||cdList();if(!l.length)return'';var x=l[CDI%l.length];
+  var w=x.d===0?'<b class="cdn today">আজ'+(x.tm?' • '+esc(x.tm):'')+'</b>':x.d===1?'<b class="cdn">আগামীকাল</b>':'<b class="cdn">আর '+bn(x.d)+' দিন</b>';
+  return'<span class="cdx">'+esc(x.t)+'</span>'+w+(l.length>1?'<small>'+bn(CDI%l.length+1)+'/'+bn(l.length)+'</small>':'');
+}
+function cdBar(){var l=cdList();return l.length?'<div class="cdb" data-go="events"><span class="cdi">🗓</span><span class="cdt" id="cdt">'+cdText(l)+'</span></div>':''}
 function vHome(){
   var t=tickerText(),dur=Math.max(14,Math.round(t.length*0.28));
   return'<div class="hd"><div class="top"><button class="lockb'+(ADMIN?' on':'')+'" data-a="lock" aria-label="প্রশাসক">'+ic(ADMIN?'unlock':'lock')+'</button><div class="dt" id="dt">'+dateLine()+'</div></div>'+
   '<div class="main"><div class="ring"><img src="'+LOGO+'" alt="লোগো"></div><div><div class="tag">'+esc(info().tagline)+'</div><h1>হিলফুল ফুযুল একতা সংঘ</h1></div></div></div>'+
-  '<div class="nbar"><div class="tick" data-go="notices"><span style="animation-duration:'+dur+'s">'+t+'</span></div><button class="nbtn" data-go="notices">'+ic('bell')+'নোটিশ বোর্ড'+ic('chev')+'</button></div>'+
+  '<div class="nbar"><div class="tick" data-go="notices"><span style="animation-duration:'+dur+'s">'+t+'</span></div><button class="nbtn" data-go="notices">'+ic('bell')+'নোটিশ বোর্ড'+ic('chev')+'</button></div>'+cdBar()+
   '<div class="grid g2">'+tile('exec')+tile('adv')+'</div>'+
   '<div class="sec"><i></i><span style="font-weight:700;color:#0b6b4f;font-size:19px">আর্থিক বিবরণী</span><i></i></div>'+
   '<div class="grid g2">'+tile('main')+tile('welfare','(মানব সেবায় নিয়োজিত)')+tile('laws')+tile('blood','হিলফুল ফুযুল ব্লাড ব্যাংক').replace('<b>ব্লাড ব্যাংক</b><small>হিলফুল ফুযুল ব্লাড ব্যাংক</small>','<b>হিলফুল ফুযুল ব্লাড ব্যাংক</b>')+'</div>'+
@@ -288,6 +315,7 @@ function vFund(f){
   var months={};all.forEach(function(x){months[(x.date||'').slice(0,7)]=1});var ml=Object.keys(months).sort().reverse();
   var l=all.filter(function(x){return(UIS.fl==='all'||x.type===UIS.fl)&&(!UIS.fm||(x.date||'').slice(0,7)===UIS.fm)}).sort(function(a,b){return String(b.date).localeCompare(String(a.date))||b.ts-a.ts});
   var h='<div class="bal"><small>বর্তমান জমা (স্থিতি)</small><div class="big">'+money(inn-out)+'</div><div style="display:flex;gap:18px;margin-top:6px;font-size:14.5px"><span>⬇ মোট জমা: <b>'+money(inn)+'</b></span><span>⬆ মোট খরচ: <b>'+money(out)+'</b></span></div></div>';
+  var pa=payAccts(f);if(pa.length)h+='<div style="font-weight:700;color:#a31245;margin:2px 0 6px">💳 টাকা পাঠানোর নম্বর</div>'+pa.map(acctCard).join('');else if(ADMIN)h+='<button class="btn full" data-a="editInfo" style="margin-bottom:10px;background:#37474f">⚙️ টাকা পাঠানোর বিকাশ/ব্যাংক নম্বর যুক্ত করুন</button>';
   h+='<button class="btn full" data-a="payGo" data-v="'+f+'" style="margin-bottom:12px;background:#d81b60;font-size:17px">💳 অনলাইনে দান / অর্থ প্রদান</button>';
   if(f==='welfare'){h+='<div class="chips" style="margin-bottom:6px"><button data-a="wv" data-v="tx" style="'+(UIS.wv!=='mem'?'background:var(--pc);color:#fff;border-color:var(--pc)':'')+'">📒 লেনদেন</button><button data-a="wv" data-v="mem" style="'+(UIS.wv==='mem'?'background:var(--pc);color:#fff;border-color:var(--pc)':'')+'">👥 সদস্যদের জমা ও বাকি</button></div>';if(UIS.wv==='mem')return shell(f,bn(DB.wmembers.length)+' জন সদস্য',h+wmView(),'add:wmembers')}
   h+='<div class="chips"><button data-a="fl" data-v="all" class="'+(UIS.fl==='all'?'on':'')+'" style="'+(UIS.fl==='all'?'background:var(--pc);color:#fff;border-color:var(--pc)':'')+'">সব</button><button data-a="fl" data-v="in" style="'+(UIS.fl==='in'?'background:#117a3a;color:#fff;border-color:#117a3a':'')+'">জমা</button><button data-a="fl" data-v="out" style="'+(UIS.fl==='out'?'background:#c62828;color:#fff;border-color:#c62828':'')+'">খরচ</button></div>';
@@ -401,6 +429,7 @@ function render(){
   $('meta[name=theme-color]').setAttribute('content',cur==='home'?'#0b6b4f':PG[cur].c[0]);
 }
 setInterval(function(){var e=$('#dt');if(e)e.innerHTML=dateLine()},30000);
+setInterval(function(){var e=$('#cdt');if(e){CDI++;e.innerHTML=cdText()}},4000);
 
 
 /* ---------- PDF viewer ---------- */
@@ -455,7 +484,7 @@ var SCH={
  notices:{t:'নোটিশ',f:[{k:'title',l:'নোটিশের শিরোনাম *',req:1},{k:'body',l:'বিস্তারিত (ঐচ্ছিক)',t:'textarea',rows:5},{k:'date',l:'তারিখ',t:'date',def:'today'},{k:'pin',l:'গুরুত্বপূর্ণ (উপরে স্থায়ীভাবে রাখুন)',t:'check'},{k:'pdf',l:'পিডিএফ সংযুক্তি (ঐচ্ছিক)',t:'pdf'}]},
  archive:{t:'আর্কাইভ',f:[{k:'title',l:'শিরোনাম *',req:1},{k:'date',l:'তারিখ',t:'date',def:'today'},{k:'cat',l:'ধরন',t:'select',opts:ACATS},{k:'body',l:'বিবরণ',t:'textarea',rows:6},{k:'link',l:'লিংক (Drive/ছবি/ভিডিও, ঐচ্ছিক)',t:'url'},{k:'pdf',l:'পিডিএফ সংযুক্তি (ঐচ্ছিক)',t:'pdf'}]},
  members:{t:'সদস্য',f:[{k:'name',l:'নাম *',req:1},{k:'phone',l:'মোবাইল নম্বর',t:'tel'},{k:'addr',l:'ঠিকানা / গ্রাম'},{k:'join',l:'কোন মাস থেকে চাঁদা (শুরুর মাস)',t:'month',def:'today'},{k:'fee',l:'মাসিক চাঁদা (৳)',t:'number',def:100}]},
- info:{t:'সংগঠন পরিচিতি',f:[{k:'tagline',l:'ট্যাগলাইন'},{k:'est',l:'স্থাপিত সাল'},{k:'address',l:'ঠিকানা'},{k:'phone',l:'যোগাযোগের মোবাইল',t:'tel'},{k:'email',l:'ইমেইল',t:'email'},{k:'bkash',l:'bKash নম্বর (পার্সোনাল)',t:'tel'},{k:'nagad',l:'Nagad নম্বর (পার্সোনাল)',t:'tel'},{k:'rocket',l:'Rocket নম্বর',t:'tel'},{k:'paynote',l:'অর্থ প্রদানের নির্দেশনা (ঐচ্ছিক)',t:'textarea',rows:3},{k:'mission',l:'লক্ষ্য ও উদ্দেশ্য',t:'textarea',rows:6},{k:'history',l:'সংগঠনের ইতিহাস',t:'textarea',rows:8}]}
+ info:{t:'সংগঠন পরিচিতি',f:[{k:'tagline',l:'ট্যাগলাইন'},{k:'est',l:'স্থাপিত সাল'},{k:'address',l:'ঠিকানা'},{k:'phone',l:'যোগাযোগের মোবাইল',t:'tel'},{k:'email',l:'ইমেইল',t:'email'},{k:'bkash',l:'bKash নম্বর (পার্সোনাল)',t:'tel'},{k:'nagad',l:'Nagad নম্বর (পার্সোনাল)',t:'tel'},{k:'rocket',l:'Rocket নম্বর',t:'tel'},{k:'bankName',l:'মূল তহবিল — ব্যাংকের নাম'},{k:'bankAcc',l:'মূল তহবিল — ব্যাংক হিসাব নম্বর'},{k:'bankHolder',l:'মূল তহবিল — হিসাবের নাম'},{k:'bankBranch',l:'মূল তহবিল — শাখা'},{k:'wbkash',l:'ওয়েল ফেয়ার ট্রাস্ট — bKash নম্বর',t:'tel'},{k:'wnagad',l:'ওয়েল ফেয়ার ট্রাস্ট — Nagad নম্বর',t:'tel'},{k:'wbankName',l:'ওয়েল ফেয়ার ট্রাস্ট — ব্যাংকের নাম'},{k:'wbankAcc',l:'ওয়েল ফেয়ার ট্রাস্ট — ব্যাংক হিসাব নম্বর'},{k:'wbankHolder',l:'ওয়েল ফেয়ার ট্রাস্ট — হিসাবের নাম'},{k:'wbankBranch',l:'ওয়েল ফেয়ার ট্রাস্ট — শাখা'},{k:'wnote',l:'ওয়েল ফেয়ার ট্রাস্টের নির্দেশনা (ঐচ্ছিক)',t:'textarea',rows:2},{k:'paynote',l:'অর্থ প্রদানের নির্দেশনা (ঐচ্ছিক)',t:'textarea',rows:3},{k:'mission',l:'লক্ষ্য ও উদ্দেশ্য',t:'textarea',rows:6},{k:'history',l:'সংগঠনের ইতিহাস',t:'textarea',rows:8}]}
 };
 function openForm(col,id,ctx){
   var s=SCH[col],o=id?DB[col].filter(function(x){return x.id===id})[0]:null,isInfo=col==='info';
@@ -691,14 +720,17 @@ function copyTxt(t){
 }
 function vPay(){
   if(UIS.paid)return shell('pay','','<div class="card" style="text-align:center"><div style="font-size:54px">✅</div><h3 style="margin:4px 0;color:#117a3a">ধন্যবাদ, '+esc(UIS.paid)+'!</h3><div style="line-height:1.8">আপনার তথ্য প্রেরণ করুনো হয়েছে।<br>প্রশাসক যাচাই করে তহবিলে যুক্ত করবেন।</div><button class="btn full" style="margin-top:12px" data-a="back">← ফিরে যান</button></div>','');
-  var i=info(),f=UIS.pf||'main',ms=[['bkash','bKash','#e2136e'],['nagad','Nagad','#f6921e'],['rocket','Rocket','#8c3494']].filter(function(m){return i[m[0]]});
-  var h='<div class="card" style="background:#fff0f5;border-color:#f4b6cf"><b style="color:#a31245;font-size:18px">💳 অর্থ প্রদানের নিয়ম</b><ol style="margin:8px 0 0;padding-left:20px;line-height:1.9"><li>নিচের নম্বরে <b>Send Money</b> করুন।</li><li>প্রেরণের পর প্রাপ্ত <b>TrxID</b> কপি করুন।</li><li>নিচের ফর্মে নাম, টাকা ও TrxID লিখে প্রেরণ করুন।</li><li>প্রশাসক যাচাই করে তহবিলে যুক্ত করবেন।</li></ol></div>';
-  if(ms.length)h+=ms.map(function(m){return'<div class="card" style="border-left:7px solid '+m[2]+';display:flex;align-items:center;gap:10px"><div style="flex:1"><b style="color:'+m[2]+';font-size:17px">'+m[1]+' (Personal)</b><div style="font-size:22px;font-weight:700;letter-spacing:.5px">'+bn(esc(i[m[0]]))+'</div></div><button class="btn sm" style="background:'+m[2]+'" data-a="copy" data-v="'+esc(i[m[0]])+'">কপি</button></div>'}).join('');
-  else h+='<div class="card empty">এখনও অর্থ প্রদান নম্বর যুক্ত করা হয়নি'+(ADMIN?' — "সংগঠন পরিচিতি" পেজের ✎ থেকে bKash/Nagad নম্বর দিন।':'।')+'</div>';
-  if(i.paynote)h+='<div class="note" style="white-space:pre-wrap">'+esc(i.paynote)+'</div>';
-  h+='<div class="card"><b style="font-size:18px">📝 অর্থ প্রদানের তথ্য প্রেরণ করুন</b><label>কোন তহবিলে প্রদান করছেন</label><select id="pyFund"><option value="main"'+(f==='main'?' selected':'')+'>মূল তহবিল</option><option value="welfare"'+(f==='welfare'?' selected':'')+'>ওয়েল ফেয়ার ট্রাস্ট</option></select><label>মাধ্যম</label><select id="pyM">'+(ms.length?ms:[['','—']]).map(function(m){return'<option>'+m[1]+'</option>'}).join('')+'<option>অন্যান্য</option></select><label>টাকার পরিমাণ (৳) *</label><input id="pyAmt" type="text" inputmode="decimal"><label>আপনার নাম *</label><input id="pyName"><label>মোবাইল নম্বর</label><input id="pyPh" type="tel"><label>TrxID (লেনদেন নম্বর) *</label><input id="pyTrx" autocapitalize="characters"><label>মন্তব্য (ঐচ্ছিক)</label><input id="pyNote"><button class="btn full" style="margin-top:14px;background:#d81b60" data-a="paySend">✅ তথ্য প্রেরণ করুন</button><div class="err" id="pyErr"></div></div>';
+  var i=info(),f=UIS.pf||'main',ms=payAccts(f);
+  var h='<div class="card" style="background:#fff0f5;border-color:#f4b6cf"><b style="color:#a31245;font-size:18px">💳 অর্থ প্রদানের নিয়ম</b><ol style="margin:8px 0 0;padding-left:20px;line-height:1.9"><li>নিচের নম্বরে টাকা পাঠান (বিকাশ/নগদ/রকেট: <b>Send Money</b>, ব্যাংক: <b>ট্রান্সফার/জমা</b>)।</li><li>প্রেরণের পর প্রাপ্ত <b>TrxID / রেফারেন্স নম্বর</b> কপি করুন।</li><li>নিচের ফর্মে নাম, টাকা ও TrxID লিখে প্রেরণ করুন।</li><li>প্রশাসক যাচাই করে তহবিলে যুক্ত করবেন।</li></ol></div>';
+  h+='<div class="chips" style="margin-bottom:8px"><button data-a="payFund" data-v="main" style="'+(f==='main'?'background:var(--pc);color:#fff;border-color:var(--pc)':'')+'">মূল তহবিল</button><button data-a="payFund" data-v="welfare" style="'+(f==='welfare'?'background:var(--pc);color:#fff;border-color:var(--pc)':'')+'">ওয়েল ফেয়ার ট্রাস্ট</button></div>';
+  if(ms.length)h+=ms.map(acctCard).join('');
+  else h+='<div class="card empty">এখনও অর্থ প্রদান নম্বর যুক্ত করা হয়নি'+(ADMIN?' — নিচের বোতাম থেকে নম্বর দিন।':'।')+(ADMIN?'<br><button class="btn sm" style="margin-top:8px" data-a="editInfo">⚙️ পেমেন্ট নম্বর সেট করুন</button>':'')+'</div>';
+  var pn=(f==='welfare'&&i.wnote)||i.paynote;if(pn)h+='<div class="note" style="white-space:pre-wrap">'+esc(pn)+'</div>';
+  h+='<div class="card"><b style="font-size:18px">📝 অর্থ প্রদানের তথ্য প্রেরণ করুন</b><label>কোন তহবিলে প্রদান করছেন</label><select id="pyFund"><option value="main"'+(f==='main'?' selected':'')+'>মূল তহবিল</option><option value="welfare"'+(f==='welfare'?' selected':'')+'>ওয়েল ফেয়ার ট্রাস্ট</option></select><label>মাধ্যম</label><select id="pyM">'+ms.map(function(m){return'<option>'+m.l+'</option>'}).join('')+'<option>অন্যান্য</option></select><label>টাকার পরিমাণ (৳) *</label><input id="pyAmt" type="text" inputmode="decimal"><label>আপনার নাম *</label><input id="pyName"><label>মোবাইল নম্বর</label><input id="pyPh" type="tel"><label>TrxID / ব্যাংক রেফারেন্স নম্বর *</label><input id="pyTrx" autocapitalize="characters"><label>মন্তব্য (ঐচ্ছিক)</label><input id="pyNote"><button class="btn full" style="margin-top:14px;background:#d81b60" data-a="paySend">✅ তথ্য প্রেরণ করুন</button><div class="err" id="pyErr"></div></div>';
   return shell('pay','',h,'');
 }
+function payKeep(){UIS.pv={};['pyAmt','pyName','pyPh','pyTrx','pyNote'].forEach(function(k){var e=$('#'+k);if(e)UIS.pv[k]=e.value})}
+function payRestore(){if(UIS.pv){Object.keys(UIS.pv).forEach(function(k){var e=$('#'+k);if(e)e.value=UIS.pv[k]});UIS.pv=null}}
 function paySend(){
   var amt=num($('#pyAmt').value),name=$('#pyName').value.trim(),trx=$('#pyTrx').value.trim(),er=$('#pyErr');
   if(amt<=0){er.textContent='টাকার পরিমাণ লিখুন';return}if(!name){er.textContent='আপনার নাম লিখুন';return}if(trx.length<4){er.textContent='TrxID দিন';return}
@@ -815,6 +847,7 @@ document.addEventListener('click',function(e){
     case'payNo':payNo(id);break;
     case'back':back();break;
     case'payGo':UIS.pf=v;go('pay');break;
+    case'payFund':payKeep();UIS.pf=v;render();payRestore();break;
     case'pdfShare':pdfShare();break;
     case'lock':if(ADMIN){ask('প্রশাসক মোড থেকে প্রস্থান করবেন?','হ্যাঁ, প্রস্থান করব',function(){auth.signOut().then(function(){toast('লগআউট হয়েছে')})})}else loginModal();break;
     case'askYes':var cb=window.__ask;window.__ask=null;closeModal();if(cb)cb();break;
@@ -845,7 +878,7 @@ document.addEventListener('click',function(e){
   }
 });
 document.addEventListener('input',function(e){if(e.target.id==='mq'){UIS.q=e.target.value;render();return}if(e.target.id==='bq'){UIS.q=e.target.value;$('#bList').innerHTML=bloodList()}});
-document.addEventListener('change',function(e){if(e.target.id==='phFile'){phPick(e.target.files[0]);return}if(e.target.id==='pdfFile'){pdfPick(e.target.files[0]);return}if(e.target.id==='f_wmid'){var wm=DB.wmembers.filter(function(m){return m.id===e.target.value})[0],nn=$('#f_name');if(wm&&nn&&!nn.value.trim())nn.value=wm.name;return}if(e.target.dataset&&e.target.dataset.cm!==undefined){collectCalc();return}if(e.target.id==='mmSel'){UIS.mm=e.target.value||todayISO().slice(0,7);render();return}if(e.target.id==='fmSel'){UIS.fm=e.target.value;render()}});
+document.addEventListener('change',function(e){if(e.target.id==='phFile'){phPick(e.target.files[0]);return}if(e.target.id==='pdfFile'){pdfPick(e.target.files[0]);return}if(e.target.id==='f_wmid'){var wm=DB.wmembers.filter(function(m){return m.id===e.target.value})[0],nn=$('#f_name');if(wm&&nn&&!nn.value.trim())nn.value=wm.name;return}if(e.target.dataset&&e.target.dataset.cm!==undefined){collectCalc();return}if(e.target.id==='mmSel'){UIS.mm=e.target.value||todayISO().slice(0,7);render();return}if(e.target.id==='fmSel'){UIS.fm=e.target.value;render()}if(e.target.id==='pyFund'){payKeep();UIS.pf=e.target.value;render();payRestore()}});
 $('#modal').addEventListener('click',function(e){if(e.target.id==='modal')closeModal()});
 
 /* ---------- boot ---------- */
